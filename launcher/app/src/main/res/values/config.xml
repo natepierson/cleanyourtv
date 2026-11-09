@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  Launcher configuration. Edit this file, then run launcher/build-and-install.sh.
-  Or leave it and push a theme instead: tools/theme.sh themes/<name> puts a config.json (same keys, see
-  themes/README.md) and an optional wallpaper on the TV, and the launcher overlays it at start.
+  Launcher configuration for a TCL 75QM751G (QM7, board G08, Android 14 / SDK 34, AU14).
+  The first install is launcher/install-only.ps1: it only pushes this APK and runs pm install -r.
+  It does not change the default Home, turn any package off, enable an accessibility service, or
+  restart the TV. launcher/build-and-install.ps1 is the later handover; on this set, setupwraith
+  can own the saved Wi-Fi, and turning it off deletes that network
+  (docs/devices/tcl-75qm751g-qm7.md). A theme's config.json still overlays this file at start.
   Package names: on the TV run `pm list packages` (tools/tv.py 'pm list packages').
 -->
 <resources>
@@ -15,26 +18,29 @@
         <item>com.amazon.tv.launcher/com.amazon.tv.launcher.ui.MainSettingsActivity</item>
     </string-array>
 
-    <!-- Apps pinned to the dock row at the bottom, in this order. Missing apps are skipped. -->
+    <!-- Apps pinned to the dock row at the bottom, left to right. Missing apps are skipped.
+         TCL 75QM751G: YouTube TV, Netflix, Prime Video, YouTube, Tubi. -->
     <string-array name="dock_apps">
+        <item>com.google.android.youtube.tvunplugged</item>
         <item>com.netflix.ninja</item>
         <item>com.amazon.amazonvideo.livingroom</item>
         <item>com.google.android.youtube.tv</item>
-        <item>in.startv.hotstar</item>
+        <item>com.tubitv</item>
     </string-array>
-    <!-- With fewer dock_apps than columns (or a dock app that is not installed), the free dock slots take
-         the first grid apps, so the dock never shows a gap. false leaves them empty (#162); a theme can
-         set "fill_dock": false. -->
-    <bool name="fill_dock">true</bool>
+    <!-- false: a dock app that is not installed leaves an empty slot, so this row stays the five
+         names above. true fills free slots with the first grid apps (#162). -->
+    <bool name="fill_dock">false</bool>
 
     <!-- Apps never shown as tiles (e.g. the Live TV app, which the Inputs menu already covers). -->
     <string-array name="hidden_apps">
         <item>com.mediatek.wwtv.tvcenter</item>
         <item>com.mitv.gallery</item>
+        <item>com.tcl.tv</item>
     </string-array>
 
-    <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. Leave empty to omit. -->
-    <string name="live_tv_package" translatable="false">com.mediatek.wwtv.tvcenter</string>
+    <!-- The TV's Live TV / tuner app, offered at the end of the Inputs menu. On this G08 set the
+         player is com.tcl.tv; com.tcl.tvinput has no launcher activity. Leave empty to omit. -->
+    <string name="live_tv_package" translatable="false">com.tcl.tv</string>
 
     <!-- Open the Live TV app above the first time Home comes up after the TV is switched on, for sets that are
          mostly used for broadcast TV. Once per boot: Home after that stays Home. Can also be set with
@@ -170,8 +176,11 @@
          with `tools/tv.py 'logcat -v time -s InputReader:D'` while pressing the button - some firmwares print no
          key line there at any verbosity, and a `getevent` MSC_SCAN is a different number, so the reliable route is
          a temporary `Log.d` in the helper's `onKeyEvent`: `getKeyCode()`, `getScanCode()`, `getDeviceId()`, read
-         after a HOME_KEY_SERVICE=1 rebuild. Leave empty to omit. -->
+         after a HOME_KEY_SERVICE=1 rebuild. This G08 build lists 83. Home answers it while this launcher is in
+         front. The accessibility helper stays off: on this board a key-filtering service stops a held volume
+         key from repeating. Leave empty to omit. -->
     <integer-array name="settings_key_keycodes">
+        <item>83</item>
     </integer-array>
     <!-- What those Settings buttons open: false, the TV's Settings; true, a small glass panel at the top right
          with TV settings, Display, Network, Apps (re-enable an app) and Launcher settings, over whatever is on screen.
@@ -230,7 +239,12 @@
          "front:172:guide:com.vt.tv.tvcenter" makes the Hisense hengshan Live TV button open Live TV, then its guide,
          where the firmware hands KEYCODE_GUIDE (172) to the stock launcher and no app ever receives it. Leave empty
          to omit. -->
+    <!-- Netflix (4062) and Prime Video (4099) on the G08 remote. Keycodes from 1000 up are answered
+         by this launcher while it is in front, with no accessibility service. YouTube is 190 and is
+         left out: that button needs the key helper, which stays off so held volume still ramps. -->
     <string-array name="app_keys" translatable="false">
+        <item>4062:com.netflix.ninja</item>
+        <item>4099:com.amazon.amazonvideo.livingroom</item>
     </string-array>
 
     <!-- Package of the stock launcher, for TVs whose firmware turns it back on after it was disabled. XGIMI's
@@ -303,10 +317,9 @@
     <!-- A direct Launcher settings action instead of TV Settings in the header (or top_menu).
          Off by default; a theme can set "launcher_settings_button": true. -->
     <bool name="launcher_settings_button">false</bool>
-    <!-- The dock band as light frosted glass, like the Inputs, Wi-Fi and Settings pills, so a sky or wallpaper shows
-         through it. false (the default) keeps the solid near-black band, or the cinematic shelf's dark glass. Can
-         also be set with "dock_glass": true in a theme's config.json. -->
-    <bool name="dock_glass">false</bool>
+    <!-- The dock band as light frosted glass, like the Inputs, Wi-Fi and Settings pills. The frost is a
+         painted white gradient, not a blur. false keeps the solid near-black band. -->
+    <bool name="dock_glass">true</bool>
     <!-- Draw the dock band and its edge. false leaves the tiles floating on the wallpaper (config.xml dock_band). -->
     <bool name="dock_band">true</bool>
     <!-- Every app in one row: the dock apps first, the rest after them, and the row scrolls sideways when focus
@@ -317,9 +330,9 @@
          the dock apps only. Can also be set with "dock_band_all" in a theme. -->
     <bool name="dock_band_all">false</bool>
     <!-- The dock band's padding equals the gap between its tiles on all four sides (as far as the grid's edges leave room),
-         so its corners are concentric with the tiles' and the spacing reads even. false (the default) keeps the fixed
-         14dp above and below, up to 22dp at the sides and 26dp corners. Can also be set with "dock_even_padding": true in a theme's config.json. -->
-    <bool name="dock_even_padding">false</bool>
+         so its corners are concentric with the tiles' and the spacing reads even. false keeps the fixed
+         14dp above and below, up to 22dp at the sides and 26dp corners. -->
+    <bool name="dock_even_padding">true</bool>
     <!-- A reorder button (two arrows) in the top bar. Off by default: reordering is also in the Settings
          button's long-press menu, so it needs no extra button on screen. -->
     <bool name="reorder_button">false</bool>
@@ -399,7 +412,9 @@
 
     <!-- Grid rows left visible under the dock on the home screen. 0 = dock sits at the very bottom. Tiles shrink if
          the dock, its title and this many rows would not otherwise fit the screen height. -->
-    <integer name="rows_below_dock">0</integer>
+    <!-- One grid row stays visible under the dock. Down moves one row, in the same column, and the
+         rest of the grid scrolls up. 0 would park the dock on the bottom edge. -->
+    <integer name="rows_below_dock">1</integer>
 
     <!-- The focused dock app's name in large type above the dock. false keeps only the glow, which leaves room
          for bigger tiles when rows_below_dock is 2 or 3. -->
@@ -407,7 +422,7 @@
 
     <!-- Tiles per row in the grid; the dock always has this many slots. Tiles are 180dp wide at 4 columns and
          shrink to fit from 5 up (about 144dp at 5, 117dp at 6 on a 1080p TV). -->
-    <integer name="columns">4</integer>
+    <integer name="columns">5</integer>
 
     <!-- Basic motion is on; advanced effects are opt-in in the launcher's own Settings screen. -->
     <bool name="animations">true</bool>
@@ -510,9 +525,9 @@
     <bool name="ambient_glow">true</bool>
     <!-- true: when the focus moves to an app of another colour, the ambient glow takes the new colour in one frame
          instead of dimming and fading back in. Each frame of that fade repaints the whole screen, about 40 per key
-         press, which a slow GPU such as the Mali-G52 cannot keep up with. Can also be set with "glow_snap" in a
-         theme's config.json. -->
-    <bool name="glow_snap">false</bool>
+         press, which a slow GPU such as the Mali-G52 cannot keep up with. On for this ~1 GB set. A theme can set
+         "glow_snap". -->
+    <bool name="glow_snap">true</bool>
     <!-- The focus highlight glows in the focused app's colour on every tile, as the cinematic shelf does for the
          dock, without cinematic_home. Can also be set with "app_glow": true in a theme's config.json. -->
     <bool name="app_glow">false</bool>
