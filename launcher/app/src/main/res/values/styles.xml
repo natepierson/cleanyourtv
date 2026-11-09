@@ -1,8 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.TvHome" parent="android:Theme.Material.NoActionBar.Fullscreen">
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Opaque on purpose. Some firmware draws a device default theme translucent, the TV app keeps
+         running under Home, and an HDMI picture stays on screen. These three stay false.
+         Quick settings and the boot probe keep their own translucent overlay themes: they are drawn
+         over another window, and they are not Home. -->
+    <style name="Theme.TvHome" parent="android:Theme.Material.NoActionBar.Fullscreen"
+        tools:ignore="TranslucentOrientation">
         <item name="android:windowBackground">@android:color/black</item>
         <item name="android:colorBackground">@android:color/black</item>
+        <item name="android:windowIsTranslucent">false</item>
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSwipeToDismiss">false</item>
         <item name="android:windowAnimationStyle">@null</item>
     </style>
 
